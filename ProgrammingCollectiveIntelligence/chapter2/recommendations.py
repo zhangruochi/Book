@@ -131,9 +131,50 @@ def getRecommendations(prefs,person,func=sim_pearson):
     return ranking             
 
 
+#基于物品的过滤  先转化数据矩阵
+def transform_prefs(prefs):
+    from collections import defaultdict
+    result = defaultdict(dict)
+    for person in prefs:
+        for item in prefs[person]:
+            result[item][person] = prefs[person][item]
+
+    return result        
+
+
+def calculate_similarity_items(prefs,n=10):
+    result = {}
+    item_prefs = transform_prefs(prefs)
+    c = 0
+    for item in item_prefs:
+        c += 1
+        if c % 100 == 0:
+            print("{0}/{1}".format(c,len(item_prefs))) #状态函数
+
+        scores = top_matches(item_prefs,item,n = n, func = sim_distance)
+        result[item] = scores
+    return result
+
+
+def get_recommondation_items(prefs,item_matchs,user):
+    from collections import defaultdict
+    user_ratings = prefs[user]
+    scores = defaultdict(int)
+    total_sim = defaultdict(int)
+
+    for item,rating in user_ratings.items():
+        for similarity,item2 in item_matchs[item]:
+            if item2 in user_ratings:
+                continue
+            scores[item2] += similarity * rating
+            
+            #全部相似度之和
+            total_sim[item2] += similarity
+    rating = [(score/total_sim[item],item) for item,score in scores.items()]
+    return rating       
 
 
 if __name__ == '__main__':
-    print(getRecommendations(critics,'Toby'))
-
+    print(get_recommondation_items(critics,calculate_similarity_items(critics,n=10),'Toby'))
+    
 
