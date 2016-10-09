@@ -49,7 +49,7 @@ class Facility
     end
 
     def vacate
-        @Person.population << @occupier
+        Person.population << @occupier
         @occupier = nil
     end
 
