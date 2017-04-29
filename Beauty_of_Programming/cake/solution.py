@@ -1,6 +1,6 @@
 import numpy as np
 
-np.random.seed(10)
+#np.random.seed(10)
 cake_size_list = [np.random.randint(100) for x in range(10)]
 print(cake_size_list)
 
@@ -18,8 +18,6 @@ def main(cake_size_list):
 
         result.insert(0,cake_size_list.pop())
     print(result)    
-
-        
 
 
 if __name__ == '__main__':
