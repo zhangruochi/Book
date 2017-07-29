@@ -4,23 +4,17 @@
 #-name   : zhangruochi
 #-email  : zrc720@gmail.com
 
-import threading
-import itertools
-import time
-import sys
 
-"""
-for i in range(5):
-    sys.stdout.write(str(i))
-    #sys.stdout.flush()
-    time.sleep(1)
-"""
+import asyncio
+import itertools
+import sys
 
 class Signal:
     go = True
 
 
-def spin(msg,signal):
+@asyncio.coroutine
+def spin(msg):
     write,flush = sys.stdout.write,sys.stdout.flush
     for char in itertools.cycle("|/-\\"):
         status = char + ' ' + msg
@@ -28,39 +22,35 @@ def spin(msg,signal):
         flush()
         #回退符
         write("\b" * len(status))
-        time.sleep(.1)
-        if not signal.go:
-            break
+        try:
+            yield from asyncio.sleep(.1) 
+        except asyncio.CancelledError:
+            break                
     write(' ' * len(status) + '\b' * len(status))        
 
+@asyncio.coroutine
 def slow_function():
-    time.sleep(3)
+    #假装 IO 等待一段时间
+    yield from asyncio.sleep(3)
     return 43
 
+@asyncio.coroutine
 def supervisor():
-    signal = Signal()
-    spinner = threading.Thread(target = spin, args = ("thinking!", signal))
+    spinner = asyncio.async(spin("thinking!"))
     print("spinner object: ",spinner)
-    spinner.start()
-
-    #主线程等待，此时派生线程仍然在运行
-    result = slow_function()
-    #给派生线程发送终止消息
-    signal.go = False
-    spinner.join()
+    result = yield from slow_function()
+    spinner.cancel()
     return result
 
 
 def main():
-    result = supervisor()
+    #获取事件循环引用
+    loop = asyncio.get_event_loop()
+    #驱动 supervisor 协程，让它运行完毕
+    result  = loop.run_until_complete(supervisor())
+    loop.close()
     print("Answer: ", result)
 
 
 if __name__ == '__main__':
     main()       
-
-
-
-    
-
-
